@@ -6,8 +6,8 @@ git branch -M main
 git remote add origin https://github.com/Kimbyung-wook/mavros_repo.git   
 git push -u origin main         
 
-본 문서는 다음을 참고하여 만들었습니다.   
-**임재용님의 moducdulab_ros**   
+#본 문서는 다음을 참고하여 만들었습니다.   
+**Jaeyoung-Lim님의 moducdulab_ros**   
 https://github.com/Jaeyoung-Lim/modudculab_ros   
 **MAVROS Offboard control example**   
 https://dev.px4.io/master/en/ros/mavros_offboard.html   
