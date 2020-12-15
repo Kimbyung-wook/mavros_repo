@@ -7,6 +7,7 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 
 namespace TEST_OFFB{
@@ -22,16 +23,23 @@ class OFFB_CTRL{
 public:
     OFFB_CTRL() :
 		nh("~"),
-        rate(10.0),
+        rateHz(10.0),
         // Publisher
 		pub_sp_local_pos(nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10)),
 		pub_sp_vel(nh.advertise<geometry_msgs::TwistStamped>("/mavros/setpoint_velocity/cmd_vel", 10)),
         // Subscriber
-        sub_state(nh.subscribe("mavros/state", 10, &OFFB_CTRL::callback_state, this)),
+        sub_state(nh.subscribe("/mavros/state", 10, &OFFB_CTRL::callback_state, this)),
 		sub_local_pos(nh.subscribe("/mavros/local_position/local", 10, &OFFB_CTRL::callback_local_pos, this)),
-		threshold(threshold_definition())
-	{ };
+        // Service
+        
+        threshold(threshold_definition())
+	{
+        srv_set_mode = nh.serviceClient<mavros_msgs::SetMode>("mavros/set_mode");
+    };
 
+    void set_offboard();
+    void set_loop_rate(double set_rate);
+    void circle_path_motion(ros::Rate loop_rate, control_mode mode);
 private:
     // Node Handle
 	ros::NodeHandle nh;
@@ -41,7 +49,10 @@ private:
 	// Subscriber
     ros::Subscriber sub_state;
     ros::Subscriber sub_local_pos;
+    // Service
+    ros::ServiceClient srv_set_mode;
 
+    
     // Messages
     mavros_msgs::State current_state;
 	geometry_msgs::PoseStamped current_local_pos, sp_local_pos;
@@ -52,15 +63,12 @@ private:
     void callback_state(const mavros_msgs::State::ConstPtr& msg);
 
     // 1st Properties
-    double rate;
+    double rateHz;
 	control_mode mode;
 
 	Eigen::Vector3d current;
 	std::array<double, 100> threshold;
 
-    void set_loop_rate(double set_rate);
-
-    void circle_path_motion(ros::Rate loop_rate, control_mode mode);
     void wait_and_move(geometry_msgs::PoseStamped target);
     std::array<double, 100> threshold_definition();
 

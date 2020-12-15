@@ -36,9 +36,34 @@ void OFFB_CTRL::callback_local_pos(const geometry_msgs::PoseStampedConstPtr& msg
 void OFFB_CTRL::callback_state(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
 }
-
+void OFFB_CTRL::set_offboard(){
+    ros::Rate loop_rate(rateHz);
+    ros::Time last_request = ros::Time::now();
+    ROS_INFO("Enter set_offboard function");
+    // 1. Set mode to offboard
+    mavros_msgs::SetMode msg_mode;
+    msg_mode.request.custom_mode = "OFFBOARD";
+    while(ros::ok()){
+        if(current_state.mode != "OFFBOARD" &&
+            (ros::Time::now() - last_request > ros::Duration(1.0))){
+            ROS_INFO("Send to set Offboard");
+            if( srv_set_mode.call(msg_mode) &&
+                msg_mode.response.mode_sent){
+                ROS_INFO("Sent to set Offboard");
+            }
+            last_request = ros::Time::now();
+        }
+        if(current_state.mode == "OFFBOARD"){
+            ROS_INFO("Engage OFFBOARD mode");
+            break;
+        }
+        loop_rate.sleep();
+        ros::spinOnce();
+    }
+    ROS_INFO("Escape set_offboard function");
+}
 void OFFB_CTRL::wait_and_move(geometry_msgs::PoseStamped target){
-    ros::Rate loop_rate(rate);
+    ros::Rate loop_rate(rateHz);
     ros::Time last_time = ros::Time::now();
     bool stop = false;
 
@@ -82,7 +107,6 @@ void OFFB_CTRL::wait_and_move(geometry_msgs::PoseStamped target){
 void OFFB_CTRL::circle_path_motion(ros::Rate loop_rate, control_mode mode=POSITION){
     ROS_INFO("Testing...");
     ros::Time last_time = ros::Time::now();
-
     while (ros::ok()) {
         tf::pointMsgToEigen(current_local_pos.pose.position, current);
 
@@ -137,5 +161,5 @@ void OFFB_CTRL::circle_path_motion(ros::Rate loop_rate, control_mode mode=POSITI
 }
 void OFFB_CTRL::set_loop_rate(double set_rate)
 {
-    rate = std::fmax(0.0,set_rate);
+    rateHz = std::fmax(2.0,set_rate);
 }

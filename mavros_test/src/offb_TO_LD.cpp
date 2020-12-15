@@ -110,7 +110,6 @@ int main(int argc, char **argv)
 
     //the setpoint publishing rate MUST be faster than 2Hz
     ros::Rate rate(10.0);
-
     ROS_INFO("Wait for FCU connection");
     // wait for FCU connection
     while(ros::ok() && current_state.connected){
