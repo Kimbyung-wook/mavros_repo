@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   std_msgs
   tf
+  mavros_msgs
 #  Eigen3
 )
 
