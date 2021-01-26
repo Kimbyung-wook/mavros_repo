@@ -1,4 +1,5 @@
 # 업로드 어떻게 함? - How to upload my files
+##처음하는거면##
 echo "# mavros_repo" >> README.md   
 git init   
 git add README.md   
@@ -6,6 +7,11 @@ git commit -m "first commit"
 git branch -M main   
 git remote add origin https://github.com/Kimbyung-wook/mavros_repo.git   
 git push -u origin main         
+
+##있는거에다가 하는거면##
+git add . # 수정한거 다 올릴려구
+git commit -m "Commentary" # 커밋한거 할 말 있으면?
+git push -u origin main # 가랏!
 
 # 어디에 이 저장소를 복사하면 되죠? - Where do i clone this repo to?
 아래 주소를 따라서 소스를 빌드한 후에
