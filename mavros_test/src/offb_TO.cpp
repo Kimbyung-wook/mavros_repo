@@ -17,7 +17,7 @@ void state_cb(const mavros_msgs::State::ConstPtr& msg){
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "offb_node");
+    ros::init(argc, argv, "offb_to");
     ros::NodeHandle nh;
     ROS_INFO("Create Node");
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>
@@ -60,9 +60,34 @@ int main(int argc, char **argv)
     arm_cmd.request.value = true;
 
     ros::Time last_request = ros::Time::now();
+    ros::Time start_time = ros::Time::now();
+    double Time_Duration = 1.0;
+    char temp[200];
+
+    ROS_INFO("Program Plan");
+    ROS_INFO(" 1. Set Takeoff pose");
+    ROS_INFO(" 2. Set offboard");
+    ROS_INFO(" 3. Arming (Takeoff)");
+    ROS_INFO("Program End");
 
     ROS_INFO("Start Loop");
     while(ros::ok()){
+        // Show states
+        if(ros::Time::now() - start_time > ros::Duration(Time_Duration)){
+            Time_Duration += 1.0;
+            // start_time = ros::Time::now();
+            // geometry_msgs::Point dXYZ = (current_setpoint_local_pos.pose.position - current_local_pos.pose.position);
+            // double range = sqrt(pow(dXYZ.x,2.0)+pow(dXYZ.y,2.0)+pow(dXYZ.z,2.0));
+            // double dX = current_setpoint_local_pos.pose.position.x - current_local_pos.pose.position.x;
+            // double dY = current_setpoint_local_pos.pose.position.y - current_local_pos.pose.position.y;
+            // double dZ = current_setpoint_local_pos.pose.position.z - current_local_pos.pose.position.z;
+            // double range = sqrt(pow(dX,2.0)+pow(dY,2.0)+pow(dZ,2.0));
+            sprintf(temp,"Tick %5.1f : %s / %d",
+                    Time_Duration,
+                    current_state.mode.c_str(),
+                    current_state.armed);
+            ROS_INFO(temp);
+        }
         if( current_state.mode != "OFFBOARD" &&
             (ros::Time::now() - last_request > ros::Duration(5.0))){
             if( set_mode_client.call(offb_set_mode) &&
