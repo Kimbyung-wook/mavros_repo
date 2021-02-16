@@ -12,7 +12,7 @@ if __name__ == "__main__":
   local_position_sub = rospy.Subscriber()
   mode_sub = rospy.Subscriber()
   arm_sub = rospy.Subscriber()
-  
+
 
   # Service/Client
   communicator_cli = rospy.ServiceProxy("CtrlCmd",UInt8)
@@ -20,4 +20,6 @@ if __name__ == "__main__":
   land_cli = rospy.ServiceProxy()
   set_mode_cli = rospy.ServiceProxy()
 
+  # PX4 param
+  rospy.set_param()
   
