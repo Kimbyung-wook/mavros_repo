@@ -6,17 +6,19 @@ import rospy
 from std_msgs.msg import *
 
 from mavros_fromgnd.srv import *
+from mavros_fromgnd.msg import camstatus
 
 CamState = False
 
 def cam_power_cb(req):
+  # print("Cam Power CB : " + req.OnOff)
   if req.OnOff == True:
     rospy.loginfo("Cam Power On")
     CamState = True
   else:
     rospy.loginfo("Cam Power Off")
     CamState = False
-  return Cam_srvResponse(True)
+  return campower_srvResponse(True)
 
 if __name__ == "__main__":
   node_name = "cam_node"
@@ -24,11 +26,15 @@ if __name__ == "__main__":
   rate = rospy.Rate(10)
 
   # Cam Power On/Off Service
-  cam_server = rospy.Service(node_name+"/cam_OnOFF",Cam_srv,cam_power_cb)
+  cam_server = rospy.Service(node_name+"/cam_power",campower_srv,self.cam_power_cb)
   # Cam State Publisher
-  cam_state_publisher = rospy.Publisher(node_name+"/cam_State",Bool,queue_size=10)
+  cam_state_publisher = rospy.Publisher(node_name+"/cam_state",camstatus,queue_size=10)
 
   rospy.loginfo("Ready to take video")
   while not rospy.is_shutdown():
-    cam_state_publisher.publish(CamState)
+    print("CamState :" + str(CamState))
+    if CamState == True:
+      cam_state_publisher.publish(True)
+    else:
+      cam_state_publisher.publish(False)
     rate.sleep()

@@ -5,10 +5,12 @@
 
 import serial
 from serial import Serial, SerialException, SerialTimeoutException
-import ros
 import rospy
 import sys
 
+from mavros_fromgnd.srv import *
+from mavros_fromgnd.msg import camstatus
+from std_msgs.msg import *
 
 class Communicator():
   def __init__(self, port=None, baud=57600, timeout=3.0):
@@ -50,19 +52,51 @@ class Communicator():
     except Exception as e:
       raise IOError("Serial Port read failure: %s" % e)
 
+class fake_port():
+  def __init__(self):
+    rospy.loginfo("Fake port")
+  def read(self,bytes_for_reading):
+    return ""
+  def write(self,data):
+    rospy.loginfo("Write : "+data)
+
+fake_serial_read = bytearray()
+cam_state = bool(False)
+
+def fake_serial_cb(req):
+  fake_serial_read = bytes(fake_serial_read)
+def cam_state_cb(req):
+  print(req.power)
+  if req.power == True:
+    cam_state = True
+  else:
+    cam_state = False
+  # cam_state = req.data
 
 if __name__ == "__main__":
-  rospy.init_node("communicator_node")
+  node_name = "comm_node"
+  rospy.init_node(node_name)
   rate = rospy.Rate(10)
 
   baudrate = 921600
   port_name = "/dev/ttyUSB0"
   serial_timeout = 0.0
 
-  if len(sys.argv) == 2:  # Port
+  print("test")
+
+  #################################################
+  # Argumentations
+  #################################################
+  bUseSerial = False
+  if len(sys.argv) == 1:
+    bUseSerial = False
+    rospy.loginfo("Not use serial port")
+  elif len(sys.argv) == 2:  # Port
+    bUseSerial = True
     port_name = sys.argv[1]
     rospy.loginfo("Port Name {0}".format(port_name))
   elif len(sys.argv) == 3: # Port and baudrate
+    bUseSerial = True
     port_name = sys.argv[1]
     rospy.loginfo("Port Name {0}".format(port_name))
     baudrate = sys.argv[2]
@@ -71,11 +105,23 @@ if __name__ == "__main__":
     rospy.loginfo("Not enough arguments!")
     exit()
   
-  try:
-    port = serial.Serial(port_name,baudrate,timeout=serial_timeout)
-  except SerialException as e:
-    rospy.logerr("Error opening serial: %s", e)
-    pass
+  #################################################
+  # ROS topic/service
+  #################################################
+
+  fake_serial_sub = rospy.Subscriber("fake_serial/topics",String,fake_serial_cb)
+  cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,cam_state_cb)
+
+  cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
+
+  if bUseSerial:
+    try:
+      port = serial.Serial(port_name,baudrate,timeout=serial_timeout)
+    except SerialException as e:
+      rospy.logerr("Error opening serial: %s", e)
+      pass
+  else:
+    port = fake_port()
 
   start_time = rospy.Time.now()
   Timeidx = 1.0
@@ -85,10 +131,14 @@ if __name__ == "__main__":
     # Show States
     #
     if rospy.Time.now() - start_time > rospy.Duration(Timeidx):
-      rospy.loginfo("Time! {0:.0f}".format(Timeidx))
-      port.write("Time! {0:.0f}\n".format(Timeidx))
+      if cam_state == True:
+        cam_power_call(False)
+      else:
+        cam_power_call(True)
+      rospy.loginfo("Time! {0:.0f}, Cam {1}".format(Timeidx,cam_state))
+      port.write("Time! {0:.0f}, Cam {1}\n".format(Timeidx,cam_state))
       Timeidx += 1.0
-    
+      
     #
     # Read from serial port
     #
