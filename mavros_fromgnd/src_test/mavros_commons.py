@@ -1,10 +1,9 @@
-#!/usr/bin/env python2
-# PX4 repository의 다음 코드/문서를 참고했습니다.
+# !/usr/bin/env python2
 # This code is refered from following code of PX4-Autopilot repository
 # PX4-Autopilot/integrationtests/python_src/px4_it/mavros/mavros_test_common.py
 # PX4-Autopilot/integrationtests/python_src/px4_it/mavros/mavros_offboard_posctl_test.py
 
-import rospy
+import ros, rospy
 import math
 from geometry_msgs.msg import PoseStamped
 from mavros_msgs.msg import Altitude, ExtendedState, HomePosition, State, \
@@ -15,7 +14,7 @@ from pymavlink import mavutil
 from sensor_msgs.msg import NavSatFix, Imu
 from six.moves import xrange
 
-class MavrosCommon():
+class MavrosCommons():
   def __init__(self):
     self.test = True
 
