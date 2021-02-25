@@ -5,7 +5,7 @@
 
 import ros, rospy
 import math
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, TwistStamped
 from mavros_msgs.msg import Altitude, ExtendedState, HomePosition, State, \
             WaypointList
 from mavros_msgs.srv import CommandBool, ParamGet, SetMode, WaypointClear, \
@@ -14,7 +14,7 @@ from pymavlink import mavutil
 from sensor_msgs.msg import NavSatFix, Imu
 from six.moves import xrange
 
-class MavrosCommons():
+class MavrosCommons(object):
   def __init__(self):
     self.test = True
 
@@ -25,6 +25,7 @@ class MavrosCommons():
     self.imu_data = Imu()
     self.home_position = HomePosition()
     self.local_position = PoseStamped()
+    self.local_velocity = TwistStamped()
     self.mission_wp = WaypointList()
     self.state = State()
     self.mav_type = None
@@ -33,7 +34,7 @@ class MavrosCommons():
       key: False
       for key in [
       'alt', 'ext_state', 'global_pos', 'home_pos', 'local_pos',
-      'mission_wp', 'state', 'imu'
+      'local_vel', 'mission_wp', 'state', 'imu'
       ]
     }
 
@@ -77,6 +78,9 @@ class MavrosCommons():
     self.local_pos_sub = rospy.Subscriber('mavros/local_position/pose',
                                             PoseStamped,
                                             self.local_position_callback)
+    self.local_vel_sub = rospy.Subscriber('mavros/local_position/velocity',
+                                            TwistStamped,
+                                            self.local_velocity_callback)
     self.mission_wp_sub = rospy.Subscriber(
             'mavros/mission/waypoints', WaypointList, self.mission_wp_callback)
     self.state_sub = rospy.Subscriber('mavros/state', State,
@@ -133,6 +137,12 @@ class MavrosCommons():
 
     if not self.sub_topics_ready['local_pos']:
       self.sub_topics_ready['local_pos'] = True
+
+  def local_velocity_callback(self, data):
+    self.local_velocity = data
+
+    if not self.sub_topics_ready['local_vel']:
+      self.sub_topics_ready['local_vel'] = True
 
   def mission_wp_callback(self, data):
     if self.mission_wp.current_seq != data.current_seq:
@@ -401,3 +411,26 @@ class MavrosCommons():
 
     if True==res.success:
       rospy.logerr("MAV_TYPE param get failed | timeout(seconds): {0}".format(timeout))
+
+  def show_status(self):
+    rate = rospy.Rate(1)
+    while not rospy.is_shutdown():
+      print("State " + self.state.mode + " / Arming : " + str(self.state.armed))
+      print("LLA  {0:>10.6f} {1:>10.6f} {2:>10.1f} ".format(self.global_position.latitude,
+                                                            self.global_position.longitude,
+                                                            self.global_position.altitude))
+      print("vNED {0:>10.1f} {1:>10.1f} {2:>10.1f} ".format(self.local_velocity.twist.linear.x,
+                                                            self.local_velocity.twist.linear.y,
+                                                            self.local_velocity.twist.linear.z))
+      print("rate {0:>10f} {1:>10f} {2:>10f} ".format(self.imu_data.angular_velocity.x,
+                                                      self.imu_data.angular_velocity.y,
+                                                      self.imu_data.angular_velocity.z))
+      rate.sleep()
+
+
+if __name__=="__main__":
+  rospy.init_node("test_for_mavros_commons")
+  mavros_commons = MavrosCommons()
+
+  mavros_commons.setup()
+  mavros_commons.show_status()

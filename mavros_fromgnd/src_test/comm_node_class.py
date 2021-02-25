@@ -12,7 +12,7 @@ import threading
 from mavros_fromgnd.srv import *
 from mavros_fromgnd.msg import camstatus
 from std_msgs.msg import *
-import flightaction
+from flightaction import ControlState
 
 class FakeSerialModel_Server:
   def __init__(self):
@@ -49,21 +49,50 @@ class CommunicatorModel:
     self._baudrate = baudrate
     self._serial_timeout = serial_timeout
     self._port = FakeSerialModel_Server()
-    self._control_state = ControlState()
+    self._control_order = ControlState.FAIL # from wireless comm.
+    self._control_state = ControlState.FAIL # now control state
     
-
     self._cam_state = False
     self._msgs = bytearray()
 
-    # self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
-    self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
+
+  def setup(self):
+    service_timeout = 1
+    self.PRINT("waiting for ROS services")
+    # Cam Node
+    try:
+      rospy.wait_for_service('cam_node/cam_power', service_timeout)
+      self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
+      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
+      self.PRINT("cam_node services are up")
+    except rospy.ROSException:
+      self.PRINT_ERROR("failed to connect to cam_node services")
+    # Control Node
+    # try:
+    #   rospy.wait_for_service('control_node/control_order', service_timeout)
+    #   self.PRINT("control_node services are up")
+    # except rospy.ROSException:
+    #   self.PRINT_ERROR("failed to connect to control_node services")
+
     if self._port_name[:4] != "fake":
       try:
         self._port = serial.Serial(self._port_name,self._baudrate,timeout=self._serial_timeout)
-        print("Open serial port {0}, {1} bps\n".format(self._port_name, self._baudrate))
+        self.PRINT("Open serial port {0}, {1} bps\n".format(self._port_name, self._baudrate))
       except SerialException as e:
-        rospy.logerr("Error opening serial: %s", e)
+        self.PRINT_ERROR("Error opening serial: %s", e)
         pass
+
+  def PRINT(self, msgs):
+    rospy.loginfo(msgs)
+    self._port.write(msgs+"\r\n")
+
+  def PRINT_ERROR(self, msgs):
+    rospy.logerr(msgs)
+    self._port.write("[ERROR] "+msgs+"\r\n")
+
+  def PRINT_WARN(self, msgs):
+    rospy.logwarn(msgs)
+    self._port.write("[WARN] "+msgs+"\r\n")
       
   def run(self):
     start_time = rospy.Time.now()
@@ -73,10 +102,9 @@ class CommunicatorModel:
       # Show States
       #
       if rospy.Time.now() - start_time > rospy.Duration(Timeidx):
-        rospy.loginfo("Send : Time! {0:.0f}".format(Timeidx))
-        self._port.write("Time! {0:.0f}\n".format(Timeidx))
+        msg2send = "Time! {0:.0f}".format(Timeidx)
+        self.PRINT(msg2send)
         Timeidx += 1.0
-
       #
       # Read from serial port
       #
@@ -84,47 +112,45 @@ class CommunicatorModel:
       received = self._port.read(bytes_remaining)
       if len(received) is not 0:
         rospy.loginfo("remaining {0}, received {1}".format(bytes_remaining,received))
-        message_parser(received)
+        self.message_parser(received)
       
       # Read from mavros_node
-
-      # Read from cam_node
-
-
-      # Read from 
-
       # sleep
       self._rate.sleep()
 
   def message_parser(self, received_msg):
-    if received[:2] == "AA":
-      if received[2:7] == "11111":
-        print("Receive 11111!")
-        self._control_state = ControlState.STOP
-      elif received[2:7] == "TTTTT":
-        print("Receive TAKEOFF!")
-        self._control_state = ControlState.TAKEOFF
-      elif received[2:7] == "LLLLL":
-        print("Receive Landing!")
-        self._control_state = ControlState.LANDING
-      elif received[2:7] == "44444":
-        print("Receive STANDBY!")
-        self._control_state = ControlState.STANDBY
-      elif received[2:7] == "55555":
-        print("Receive 55555!")
-        self._control_state = ControlState.FORWARD
-      elif received[2:7] == "55555":
-        print("Receive 55555!")
-        self._control_state = ControlState.BACKWARD
-      elif received[2:7] == "55555":
-        print("Receive 55555!")
-        self._control_state = ControlState.RIGHTSIDE
-      elif received[2:7] == "55555":
-        print("Receive 55555!")
-        self._control_state = ControlState.LEFTSIDE
+    if received_msg[:2] == "AA":
+      if received_msg[2:7] == "11111":
+        msg2send = "Receive STOP!"
+        self._control_order = ControlState.STOP
+      elif received_msg[2:7] == "22222":
+        msg2send = "Receive TAKEOFF!"
+        self._control_order = ControlState.TAKEOFF
+      elif received_msg[2:7] == "33333":
+        msg2send = "Receive LANDING!"
+        self._control_order = ControlState.LANDING
+      elif received_msg[2:7] == "44444":
+        msg2send = "Receive STANDBY!"
+        self._control_order = ControlState.STANDBY
+      elif received_msg[2:7] == "55555":
+        msg2send = "Receive FORWARD!"
+        self._control_order = ControlState.FORWARD
+      elif received_msg[2:7] == "66666":
+        msg2send = "Receive BACKWARD!"
+        self._control_order = ControlState.BACKWARD
+      elif received_msg[2:7] == "77777":
+        msg2send = "Receive RIGHTSIDE!"
+        self._control_order = ControlState.RIGHTSIDE
+      elif received_msg[2:7] == "88888":
+        msg2send = "Receive LEFTSIDE!"
+        self._control_order = ControlState.LEFTSIDE
+      elif received_msg[2:7] == "NNNNN":
+        msg2send = "Receive Cam On!"
+      elif received_msg[2:7] == "FFFFF":
+        msg2send = "Receive Cam Off!"
       else:
-        print("WRONG PROTOCAL!!")
-    return 
+        msg2send = "Receive WRONG PROTOCAL!"
+      self.PRINT(msg2send)
 
   def cam_state_cb(self, req):
     if req.power == True:
@@ -144,16 +170,12 @@ if __name__ == "__main__":
   #################################################
   # Argumentations
   #################################################
-  bUseSerial = False
   if len(sys.argv) == 1:
-    bUseSerial = False
     rospy.loginfo("Not use serial port")
   elif len(sys.argv) == 2:  # Port
-    bUseSerial = True
     port_name = sys.argv[1]
     rospy.loginfo("Port Name {0}".format(port_name))
   elif len(sys.argv) == 3: # Port and baudrate
-    bUseSerial = True
     port_name = sys.argv[1]
     rospy.loginfo("Port Name {0}".format(port_name))
     baudrate = sys.argv[2]
@@ -163,4 +185,5 @@ if __name__ == "__main__":
     exit()
   
   comm_model = CommunicatorModel(node_name,hz,port_name,baudrate,serial_timeout)
+  comm_model.setup()
   comm_model.run()
