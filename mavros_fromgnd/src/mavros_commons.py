@@ -78,7 +78,7 @@ class MavrosCommons(object):
     self.local_pos_sub = rospy.Subscriber('mavros/local_position/pose',
                                             PoseStamped,
                                             self.local_position_callback)
-    self.local_vel_sub = rospy.Subscriber('mavros/local_position/velocity',
+    self.local_vel_sub = rospy.Subscriber('mavros/local_position/velocity_local',
                                             TwistStamped,
                                             self.local_velocity_callback)
     self.mission_wp_sub = rospy.Subscriber(
@@ -182,11 +182,27 @@ class MavrosCommons(object):
   #
   # Helper methods
   #
+  def get_arm(self,arm_in):
+    if self.state.armed == arm_in:
+      return True
+    else:
+      return False
+
+  def get_mode(self):
+    return self.state.mode
+
+  def get_local_position(self):
+    return [self.local_position.pose.position.x,
+            self.local_position.pose.position.y,
+            self.local_position.pose.position.z,
+            self.local_position.pose.orientation.z]
+  def get_yaw(self):
+    return self.local_position.pose.orientation.z
   def set_arm(self, arm, timeout):
     """arm: True to arm or False to disarm, timeout(int): seconds"""
     rospy.loginfo("setting FCU arm: {0}".format(arm))
     old_arm = self.state.armed
-    loop_freq = 1  # Hz
+    loop_freq = 2  # Hz
     rate = rospy.Rate(loop_freq)
     arm_set = False
     for i in xrange(timeout * loop_freq):
@@ -208,7 +224,7 @@ class MavrosCommons(object):
       except rospy.ROSException as e:
         rospy.logfatal(e)
 
-    if True==arm_set:
+    if False==arm_set:
       rospy.logerr("failed to set arm | new arm: {0}, old arm: {1} | timeout(seconds): {2}".
         format(arm, old_arm, timeout))
 
@@ -238,7 +254,7 @@ class MavrosCommons(object):
       except rospy.ROSException as e:
         rospy.logfatal(e)
 
-    if True==mode_set:
+    if False==mode_set:
       rospy.logerr("failed to set mode | new mode: {0}, old mode: {1} | timeout(seconds): {2}".
         format(mode, old_mode, timeout))
 
@@ -262,7 +278,7 @@ class MavrosCommons(object):
       except rospy.ROSException as e:
         rospy.logfatal(e)
 
-    if True==simulation_ready:
+    if False==simulation_ready:
       rospy.logerr("failed to hear from all subscribed simulation topics | topic ready flags: {0} | timeout(seconds): {1}".
         format(self.sub_topics_ready, timeout))
 
@@ -285,12 +301,15 @@ class MavrosCommons(object):
       except rospy.ROSException as e:
         rospy.logfatal(e)
 
-    if True==landed_state_confirmed:
+    if False==landed_state_confirmed:
       rospy.logerr("landed state not detected | desired: {0}, current: {1} | index: {2}, timeout(seconds): {3}".
         format(mavutil.mavlink.enums['MAV_LANDED_STATE'][
         desired_landed_state].name, mavutil.mavlink.enums[
           'MAV_LANDED_STATE'][self.extended_state.landed_state].name,
            index, timeout))
+      return False
+    else:
+      return True
 
   def wait_for_vtol_state(self, transition, timeout, index):
     """Wait for VTOL transition, timeout(int): seconds"""

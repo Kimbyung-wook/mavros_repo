@@ -49,7 +49,7 @@ class CommunicatorModel:
     self._baudrate = baudrate
     self._serial_timeout = serial_timeout
     self._port = FakeSerialModel_Server()
-    self._control_order = ControlState.FAIL # from wireless comm.
+    self._control_cmd = ControlState.FAIL # from wireless comm.
     self._control_state = ControlState.FAIL # now control state
     
     self._cam_state = False
@@ -62,14 +62,16 @@ class CommunicatorModel:
     # Cam Node
     try:
       rospy.wait_for_service('cam_node/cam_power', service_timeout)
+      rospy.wait_for_service('control_node/control_cmd', service_timeout)
       self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
-      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
+      self._ctrlcmd_call   = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
+      self._cam_state_sub  = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
       self.PRINT("cam_node services are up")
     except rospy.ROSException:
       self.PRINT_ERROR("failed to connect to cam_node services")
     # Control Node
     # try:
-    #   rospy.wait_for_service('control_node/control_order', service_timeout)
+    #   rospy.wait_for_service('control_node/control_cmd', service_timeout)
     #   self.PRINT("control_node services are up")
     # except rospy.ROSException:
     #   self.PRINT_ERROR("failed to connect to control_node services")
@@ -113,6 +115,7 @@ class CommunicatorModel:
       if len(received) is not 0:
         rospy.loginfo("remaining {0}, received {1}".format(bytes_remaining,received))
         self.message_parser(received)
+        self._ctrlcmd_call(self._control_cmd)
       
       # Read from mavros_node
       # sleep
@@ -121,29 +124,31 @@ class CommunicatorModel:
   def message_parser(self, received_msg):
     if received_msg[:2] == "AA":
       if received_msg[2:7] == "11111":
-        msg2send = "Receive STOP!"
-        self._control_order = ControlState.STOP
+        msg2send = "Receive ONGROUND, WRONG command!"
       elif received_msg[2:7] == "22222":
         msg2send = "Receive TAKEOFF!"
-        self._control_order = ControlState.TAKEOFF
+        self._control_cmd = ControlState.TAKEOFF
       elif received_msg[2:7] == "33333":
         msg2send = "Receive LANDING!"
-        self._control_order = ControlState.LANDING
+        self._control_cmd = ControlState.LANDING
       elif received_msg[2:7] == "44444":
         msg2send = "Receive STANDBY!"
-        self._control_order = ControlState.STANDBY
+        self._control_cmd = ControlState.STANDBY
       elif received_msg[2:7] == "55555":
         msg2send = "Receive FORWARD!"
-        self._control_order = ControlState.FORWARD
+        self._control_cmd = ControlState.FORWARD
       elif received_msg[2:7] == "66666":
         msg2send = "Receive BACKWARD!"
-        self._control_order = ControlState.BACKWARD
+        self._control_cmd = ControlState.BACKWARD
       elif received_msg[2:7] == "77777":
         msg2send = "Receive RIGHTSIDE!"
-        self._control_order = ControlState.RIGHTSIDE
+        self._control_cmd = ControlState.RIGHTSIDE
       elif received_msg[2:7] == "88888":
         msg2send = "Receive LEFTSIDE!"
-        self._control_order = ControlState.LEFTSIDE
+        self._control_cmd = ControlState.LEFTSIDE
+      elif received_msg[2:7] == "99999":
+        msg2send = "Receive STOP!"
+        self._control_cmd = ControlState.STOP
       elif received_msg[2:7] == "NNNNN":
         msg2send = "Receive Cam On!"
       elif received_msg[2:7] == "FFFFF":
