@@ -1,3 +1,4 @@
+#!usr/bin/python2
 import ros, rospy
 from std_msgs.msg import *
 from mavros_commander import MavrosCommander
@@ -59,7 +60,7 @@ class ControlNode():
       elif self.is_control_cmd("LEFTTURN"):
         return self.go_LEFTTURN()
       elif self.is_control_cmd("RTH"):
-        return self.go_LEFTTURN()
+        return self.go_RTH()
       elif self.is_control_cmd("STOP"):
         return self.go_STOP()
       else:

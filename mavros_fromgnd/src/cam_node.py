@@ -1,4 +1,5 @@
-# Test command
+#!usr/bin/python2
+#! Test command
 # rosservice call /cam_node/cam_OnOFF 1
 # rosservice call /cam_node/cam_OnOFF 0
 import ros

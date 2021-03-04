@@ -1,4 +1,5 @@
-# Terminal 1 - minicom
+#!usr/bin/python2
+#! Terminal 1 - minicom
 #  and type anything
 # Terminal 2
 #  python communicator_node /dev/ttyUSB0 57600
@@ -59,12 +60,15 @@ class CommunicatorModel:
   def setup(self):
     service_timeout = 1
     self.PRINT("waiting for ROS services")
+    try:
+      rospy.wait_for_service('control_node/control_cmd', service_timeout)
+      self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
+    except rospy.ROSException:
+      self.PRINT_ERROR("failed to connect to control_node services")
     # Cam Node
     try:
       rospy.wait_for_service('cam_node/cam_power', service_timeout)
-      rospy.wait_for_service('control_node/control_cmd', service_timeout)
       self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
-      self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
       self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
       self.PRINT("cam_node services are up")
     except rospy.ROSException:
@@ -164,8 +168,8 @@ class CommunicatorModel:
         self._control_cmd = "LEFTTURN"
 
       elif received_msg[2:7] == "HHHHH":
-        msg2send = "Receive STOP!"
-        self._control_cmd = "STOP"
+        msg2send = "Receive RTH!"
+        self._control_cmd = "RTH"
       elif received_msg[2:7] == "!!!!!":
         msg2send = "Receive STOP!"
         self._control_cmd = "STOP"
