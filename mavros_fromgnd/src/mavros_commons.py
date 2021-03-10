@@ -13,6 +13,8 @@ from mavros_msgs.srv import CommandBool, ParamGet, SetMode, WaypointClear, \
 from pymavlink import mavutil
 from sensor_msgs.msg import NavSatFix, Imu
 from six.moves import xrange
+from tf.transformations import euler_from_quaternion
+
 
 class MavrosCommons(object):
   def __init__(self):
@@ -435,15 +437,23 @@ class MavrosCommons(object):
     rate = rospy.Rate(1)
     while not rospy.is_shutdown():
       print("State " + self.state.mode + " / Arming : " + str(self.state.armed))
+      quat = [self.local_position.pose.orientation.x,
+              self.local_position.pose.orientation.y,
+              self.local_position.pose.orientation.z,
+              self.local_position.pose.orientation.w]
+      (roll, pitch, yaw) = euler_from_quaternion(quat)
       print("LLA  {0:>10.6f} {1:>10.6f} {2:>10.1f} ".format(self.global_position.latitude,
                                                             self.global_position.longitude,
                                                             self.global_position.altitude))
       print("vNED {0:>10.1f} {1:>10.1f} {2:>10.1f} ".format(self.local_velocity.twist.linear.x,
                                                             self.local_velocity.twist.linear.y,
                                                             self.local_velocity.twist.linear.z))
-      print("rate {0:>10f} {1:>10f} {2:>10f} ".format(self.imu_data.angular_velocity.x,
-                                                      self.imu_data.angular_velocity.y,
-                                                      self.imu_data.angular_velocity.z))
+      # print("Rete {0:>10f} {1:>10f} {2:>10f} ".format(self.imu_data.angular_velocity.x,
+      #                                                 self.imu_data.angular_velocity.y,
+      #                                                 self.imu_data.angular_velocity.z))
+      print("Euler{0:>10f} {1:>10f} {2:>10f} ".format(roll*57.296,
+                                                      pitch*57.296,
+                                                      yaw*57.296))
       rate.sleep()
 
 
