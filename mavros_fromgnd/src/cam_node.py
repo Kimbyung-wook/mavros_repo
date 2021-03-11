@@ -1,4 +1,4 @@
-#!usr/bin/python2
+#!/usr/bin/env python
 #! Test command
 # rosservice call /cam_node/cam_OnOFF 1
 # rosservice call /cam_node/cam_OnOFF 0
@@ -36,16 +36,11 @@ class CamModel:
       self._rate.sleep()
     
   def cam_power_cb(self,req):
-    # print("Cam Power CB : " + req.OnOff)
-    # rospy.loginfo("ask "+str(req.OnOff)+", now "+str(self._CamState))
     if req.OnOff != self._CamState:
       self._CamState = req.OnOff
-    # if req.OnOff == True:
-    #   self._CamState = True
-    # else:
-    #   self._CamState = False
-    # rospy.loginfo("ask "+str(req.OnOff)+", now "+str(self._CamState))
-    return campower_srvResponse(True)
+      return True
+    else:
+      return False
 
 if __name__ == "__main__":
   node_name = "cam_node"

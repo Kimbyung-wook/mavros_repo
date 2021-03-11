@@ -53,6 +53,7 @@ add_message_files(
   FILES
   camstatus.msg
   ctrlstatus.msg
+  log2comm.msg
 )
 
 ## Generate services in the 'srv' folder

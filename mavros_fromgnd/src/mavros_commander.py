@@ -117,17 +117,18 @@ class MavrosCommander(MavrosCommons):
     self.pos.pose.position.x = x
     self.pos.pose.position.y = y
     self.pos.pose.position.z = z
-    rospy.loginfo(
-        "attempting to reach position | x: {0}, y: {1}, z: {2} | current position x: {3:.2f}, y: {4:.2f}, z: {5:.2f}".
-        format(x, y, z, self.local_position.pose.position.x,
-                self.local_position.pose.position.y,
-                self.local_position.pose.position.z))
-
-    # For demo purposes we will lock yaw/heading to north.
     yaw_degrees = yaw_in # North
     yaw = math.radians(yaw_degrees)
     quaternion = quaternion_from_euler(0, 0, yaw)
     self.pos.pose.orientation = Quaternion(*quaternion)
+    rospy.loginfo("target  position | x: {0:.2f}, y: {1:.2f}, z: {2:.2f}, yaw: {3:.2f}".
+                format( x, y, z, yaw_degrees))
+    rospy.loginfo("current position | x: {0:.2f}, y: {1:.2f}, z: {2:.2f}, yaw: {3:.2f}".
+                format(
+                self.local_position.pose.position.x,
+                self.local_position.pose.position.y,
+                self.local_position.pose.position.z,
+                self.local_position.pose.orientation.z))
 
     # does it reach the position in 'timeout' seconds?
     loop_freq = 2  # Hz
@@ -148,10 +149,11 @@ class MavrosCommander(MavrosCommons):
             rospy.logerr('ROSException')
 
     if reached==False:
-      rospy.logerr("took too long to get to position | current position x: {0:.2f}, y: {1:.2f}, z: {2:.2f} | timeout(seconds): {3}".
+      rospy.logerr("took too long to get to position | current position x: {0:.2f}, y: {1:.2f}, z: {2:.2f}, yaw: {3:.2f} | timeout(seconds): {4}".
       format(self.local_position.pose.position.x,
               self.local_position.pose.position.y,
-              self.local_position.pose.position.z, timeout))
+              self.local_position.pose.position.z,
+              self.local_position.pose.orientation.z, timeout))
       return False
     else:
       return True

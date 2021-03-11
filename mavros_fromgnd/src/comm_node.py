@@ -1,4 +1,4 @@
-#!usr/bin/python2
+#!/usr/bin/env python
 #! Terminal 1 - minicom
 #  and type anything
 # Terminal 2
@@ -43,7 +43,7 @@ class CommunicatorModel:
                     hz=10.0,
                     port_name="/dev/ttyUSB0",
                     baudrate=57600,
-                    serial_timeout=0.0):
+                    serial_timeout=1.0):
     rospy.init_node(node_name)
     self._rate = rospy.Rate(hz)
     self._port_name = port_name
@@ -60,16 +60,16 @@ class CommunicatorModel:
   def setup(self):
     service_timeout = 1
     self.PRINT("waiting for ROS services")
-    try:
-      rospy.wait_for_service('control_node/control_cmd', service_timeout)
-      self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
-    except rospy.ROSException:
-      self.PRINT_ERROR("failed to connect to control_node services")
+    # try:
+    #   rospy.wait_for_service('control_node/control_cmd', service_timeout)
+    #   self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
+    # except rospy.ROSException:
+    #   self.PRINT_ERROR("failed to connect to control_node services")
     # Cam Node
     try:
       rospy.wait_for_service('cam_node/cam_power', service_timeout)
       self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
-      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
+#      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
       self.PRINT("cam_node services are up")
     except rospy.ROSException:
       self.PRINT_ERROR("failed to connect to cam_node services")
@@ -85,7 +85,7 @@ class CommunicatorModel:
         self._port = serial.Serial(self._port_name,self._baudrate,timeout=self._serial_timeout)
         self.PRINT("Open serial port {0}, {1} bps\n".format(self._port_name, self._baudrate))
       except SerialException as e:
-        self.PRINT_ERROR("Error opening serial: %s", e)
+        self.PRINT_ERROR("Error opening serial: %s"+str(e))
         pass
 
   def PRINT(self, msgs):
@@ -119,7 +119,7 @@ class CommunicatorModel:
       if len(received) is not 0:
         rospy.loginfo("remaining {0}, received {1}".format(bytes_remaining,received))
         self.message_parser(received)
-        self._control_cmd_call(self._control_cmd)
+#        self._control_cmd_call(self._control_cmd)
 
       
       # Read from mavros_node
@@ -177,8 +177,10 @@ class CommunicatorModel:
 
       elif received_msg[2:7] == "NNNNN":
         msg2send = "Receive Cam On!"
+        self._cam_power_call(True)
       elif received_msg[2:7] == "FFFFF":
         msg2send = "Receive Cam Off!"
+        self._cam_power_call(False)
       else:
         msg2send = "Receive WRONG PROTOCAL!"
       self.PRINT(msg2send)
@@ -194,26 +196,32 @@ if __name__ == "__main__":
   hz = 10.0
   baudrate = 57600
   port_name = "/dev/ttyUSB0"
-  serial_timeout = 0.0
+  serial_timeout = 1.0
 
   print("Wait for messages")
 
   #################################################
   # Argumentations
   #################################################
-  if len(sys.argv) == 1:
-    rospy.loginfo("Not use serial port")
-  elif len(sys.argv) == 2:  # Port
-    port_name = sys.argv[1]
-    rospy.loginfo("Port Name {0}".format(port_name))
-  elif len(sys.argv) == 3: # Port and baudrate
-    port_name = sys.argv[1]
-    rospy.loginfo("Port Name {0}".format(port_name))
-    baudrate = sys.argv[2]
-    rospy.loginfo("Baudrate {0}".format(baudrate))
-  else:
-    rospy.loginfo("Not enough arguments!")
-    exit()
+  # if len(sys.argv) == 1:
+  #   rospy.loginfo("Not use serial port")
+  #   port_name = rospy.get_param("serial_port")
+  # elif len(sys.argv) == 2:  # Port
+  #   port_name = sys.argv[1]
+  #   rospy.loginfo("Port Name {0}".format(port_name))
+  # elif len(sys.argv) == 3: # Port and baudrate
+  #   port_name = sys.argv[1]
+  #   rospy.loginfo("Port Name {0}".format(port_name))
+  #   baudrate = sys.argv[2]
+  #   rospy.loginfo("Baudrate {0}".format(baudrate))
+  # else:
+  #   rospy.loginfo("Not enough arguments!")
+  #   exit()
+  # port_name = rospy.get_param("fcu_url","fake")
+  # baudrate = rospy.get_param("baudrate",57600)
+
+  # port_name = "fake"
+  rospy.loginfo("Port name : " + port_name + ", baudrate : {:.0f}".format(baudrate))
   
   comm_model = CommunicatorModel(node_name,hz,port_name,baudrate,serial_timeout)
   comm_model.setup()

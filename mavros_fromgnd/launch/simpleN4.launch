@@ -11,19 +11,12 @@
   <group ns="simple4">
 
 
-    <!-- cam node -->
-    <node pkg="mavros_fromgnd" type="cam_node.py" name="cam" output="screen"/>
-
-    <!-- control_node -->
-    <!-- <node pkg="mavros_fromgnd" type="control_node.py" name="control" output="screen"/> -->
-
-    <!-- comm_node -->
-    <!-- <node pkg="mavros_fromgnd" type="comm_node.py" name="comm" output="screen"/> -->
-
-    <arg name="fcu_url" default="udp://:14540@127.0.0.1:14580" />
     <!-- arg name="fcu_url" default="/dev/ttyACM0:921600" / -->
     <!-- <arg name="fcu_url" default="/dev/ttyUSB0:57600" /> -->
+    <arg name="fcu_url" default="udp://:14540@127.0.0.1:14580" />
     <arg name="gcs_url" default="" />
+    <arg name="serial_port" default="/dev/ttyUSB0" />
+    <arg name="baudrate" default="57600" />
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="log_output" default="screen" />
@@ -43,5 +36,15 @@
       <arg name="fcu_protocol" value="$(arg fcu_protocol)" />
       <arg name="respawn_mavros" default="$(arg respawn_mavros)" />
     </include>
+
+    <!-- cam node -->
+    <node pkg="mavros_fromgnd" type="cam_node.py" name="cam_node" output="screen"/>
+
+    <!-- control_node -->
+    <node pkg="mavros_fromgnd" type="control_node.py" name="control_node" output="screen"/>
+
+    <!-- comm_node -->
+    <node pkg="mavros_fromgnd" type="comm_node.py" name="comm_node" output="screen"/>
+
   </group>
 </launch>
