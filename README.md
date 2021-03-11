@@ -37,6 +37,27 @@ call: 제어 명령, 캠 On/Off <br>
   [Terminal 3] @ **rosservice call /fake_serial/topics "test message"**<br>
   [Terminal 1] remaining 100, received test messages<br>
 
+# How to force upstarting to the machine?
+Refer from robot-upstart and https://roboticsbackend.com/make-ros-launch-start-on-boot-with-robot_upstart/ <br>
+**sudo apt-get install ros-melodic-robot-upstart** <br>
+No need to run roscore <br>
+**rosrun robot_upstart install <PKG_NAME> <LAUNCHFILE_NAME> --job <JOB_NAME> --symlink**
+After this, just run following:
+**sudo systemctl daemon-reload**
+That launch file is installed, but is not running yet.
+
+## How to disabling 
+sudo systemctl disable <JOB_NAME>.service
+
+## Want to run at the start
+sudo systemctl start <JOB_NAME>.service
+## Stop
+sudo systemctl stop <JOB_NAME>.service
+
+## Permission
+cd /etc/udev/rules.d/<br>
+sudo touch local.rules<br>
+ACTION=="add", KERNEL=="dialout", MODE="0666"<br>
 
 # 업로드 어떻게 함? - How to upload my files
 ##처음하는거면##
