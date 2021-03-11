@@ -198,6 +198,7 @@ if __name__ == "__main__":
   port_name = "/dev/ttyUSB0"
   serial_timeout = 1.0
 
+  rospy.sleep(10)
   print("Wait for messages")
 
   #################################################
