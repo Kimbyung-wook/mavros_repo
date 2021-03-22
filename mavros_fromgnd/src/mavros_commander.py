@@ -251,37 +251,37 @@ if __name__=="__main__":
                               5, -1)
 
   mavros_commander.set_mode("OFFBOARD", 5)
-  mavros_commander.set_arm(True, 5)
+  # mavros_commander.set_arm(True, 5)
   mavros_commander.set_XY_VEL_MAX(5.0)
   mavros_commander.set_TKO_SPEED(0.1)
   mavros_commander.set_MPC_YAWRAUTO_MAX(30.0)
 
-  res = mavros_commander.get_param_srv("MPC_XY_VEL_MAX")
-  print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
-  res = mavros_commander.get_param_srv("MPC_XY_CRUISE")
-  print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
-  res = mavros_commander.get_param_srv("MPC_TKO_SPEED")
-  print("Parameter MPC_TKO_SPEED resp " + str(res.success) + " value " + str(res.value.real))
-  res = mavros_commander.get_param_srv("MPC_VEL_MANUAL")
-  print("Parameter MPC_VEL_MANUAL resp " + str(res.success) + " value " + str(res.value.real))
-  # positions = ((0, 0, 0), (50, 50, 20), (50, -50, 20), (-50, -50, 20),
-  #               (0, 0, 20))
-  # positions = ((50, 50, 20), (50, -50, 20), (-50, -50, 20),
-  #               (0, 0, 20))
-  positions = ((0, 0, 3, 0),(10, 10, 5, 30), (10, -10, 5, 60), (-10, -10, 5, 30),
-                (0, 0, 5, 0))
-  # mavros_commander
-  for i in xrange(len(positions)):
-    if mavros_commander.get_arm(True):
-      mavros_commander.set_arm(True,5)
-    mavros_commander.reach_position_yaw(
-                positions[i][0],
-                positions[i][1],
-                positions[i][2],
-                positions[i][3],
-                30)
+  # res = mavros_commander.get_param_srv("MPC_XY_VEL_MAX")
+  # print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
+  # res = mavros_commander.get_param_srv("MPC_XY_CRUISE")
+  # print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
+  # res = mavros_commander.get_param_srv("MPC_TKO_SPEED")
+  # print("Parameter MPC_TKO_SPEED resp " + str(res.success) + " value " + str(res.value.real))
+  # res = mavros_commander.get_param_srv("MPC_VEL_MANUAL")
+  # print("Parameter MPC_VEL_MANUAL resp " + str(res.success) + " value " + str(res.value.real))
+  # # positions = ((0, 0, 0), (50, 50, 20), (50, -50, 20), (-50, -50, 20),
+  # #               (0, 0, 20))
+  # # positions = ((50, 50, 20), (50, -50, 20), (-50, -50, 20),
+  # #               (0, 0, 20))
+  # positions = ((0, 0, 3, 0),(10, 10, 5, 30), (10, -10, 5, 60), (-10, -10, 5, 30),
+  #               (0, 0, 5, 0))
+  # # mavros_commander
+  # for i in xrange(len(positions)):
+  #   if mavros_commander.get_arm(True):
+  #     mavros_commander.set_arm(True,5)
+  #   mavros_commander.reach_position_yaw(
+  #               positions[i][0],
+  #               positions[i][1],
+  #               positions[i][2],
+  #               positions[i][3],
+  #               30)
 
-  mavros_commander.set_mode("AUTO.LAND", 5)
-  mavros_commander.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-                              45, 0)
-  mavros_commander.set_arm(False, 5)
+  # mavros_commander.set_mode("AUTO.LAND", 5)
+  # mavros_commander.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+  #                             45, 0)
+  # mavros_commander.set_arm(False, 5)

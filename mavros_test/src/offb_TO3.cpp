@@ -43,7 +43,7 @@ double RangeBetweenPoseStamped(const geometry_msgs::PoseStamped pose1, const geo
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "offb_to2");
+    ros::init(argc, argv, "offb_to3");
     ros::NodeHandle nh;
     ROS_INFO("Create Node");
     // Publisher

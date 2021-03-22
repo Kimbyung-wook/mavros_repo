@@ -263,6 +263,7 @@ if __name__ == "__main__":
   node_name = "control_node"
   rospy.init_node(node_name)
   controller = ControlNode()
+  rospy.sleep(9)
   controller.setup()
   rospy.loginfo("Engage : " + node_name)
   rospy.loginfo("Waiting for the order")

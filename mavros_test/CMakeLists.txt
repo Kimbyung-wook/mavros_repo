@@ -127,6 +127,12 @@ include_directories(
 
 #add_executable(offb_test src/offb_test.cpp)
 #target_link_libraries(offb_test ${catkin_LIBRARIES})
+add_executable(
+  offb_node
+  src/offb_node.cpp)
+target_link_libraries(
+  offb_node
+  ${catkin_LIBRARIES})
 
 add_executable(
   offb_TO

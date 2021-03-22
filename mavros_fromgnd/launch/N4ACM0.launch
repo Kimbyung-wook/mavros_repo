@@ -8,12 +8,12 @@
 
        Note: set to false for deploying to a real robot.
   -->
-  <group ns="simple4">
+  <group ns="N4ACM0">
 
 
-    <!-- arg name="fcu_url" default="/dev/ttyACM0:921600" / -->
+    <arg name="fcu_url" default="/dev/ttyACM0:921600" />
     <!-- <arg name="fcu_url" default="/dev/ttyUSB0:57600" /> -->
-    <arg name="fcu_url" default="udp://:14540@127.0.0.1:14580" />
+    <!-- <arg name="fcu_url" default="udp://:14540@127.0.0.1:14580" /> -->
     <arg name="gcs_url" default="" />
     <arg name="serial_port" default="/dev/ttyUSB0" />
     <arg name="baudrate" default="57600" />

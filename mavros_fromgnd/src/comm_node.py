@@ -12,6 +12,7 @@ import threading
 
 from mavros_fromgnd.srv import *
 from mavros_fromgnd.msg import camstatus
+from mavros_commons import MavrosCommons
 from std_msgs.msg import *
 from flightaction import ControlState
 
@@ -45,6 +46,7 @@ class CommunicatorModel:
                     baudrate=57600,
                     serial_timeout=1.0):
     rospy.init_node(node_name)
+    self._readpx4 = MavrosCommons();
     self._rate = rospy.Rate(hz)
     self._port_name = port_name
     self._baudrate = baudrate
@@ -58,6 +60,7 @@ class CommunicatorModel:
 
 
   def setup(self):
+    self._readpx4.setup();
     service_timeout = 1
     self.PRINT("waiting for ROS services")
     # try:
@@ -69,16 +72,16 @@ class CommunicatorModel:
     try:
       rospy.wait_for_service('cam_node/cam_power', service_timeout)
       self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
-#      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
+      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
       self.PRINT("cam_node services are up")
     except rospy.ROSException:
       self.PRINT_ERROR("failed to connect to cam_node services")
     # Control Node
-    # try:
-    #   rospy.wait_for_service('control_node/control_cmd', service_timeout)
-    #   self.PRINT("control_node services are up")
-    # except rospy.ROSException:
-    #   self.PRINT_ERROR("failed to connect to control_node services")
+    try:
+      rospy.wait_for_service('control_node/control_cmd', service_timeout)
+      self.PRINT("control_node services are up")
+    except rospy.ROSException:
+      self.PRINT_ERROR("failed to connect to control_node services")
 
     if self._port_name[:4] != "fake":
       try:
@@ -108,8 +111,17 @@ class CommunicatorModel:
       # Show States
       #
       if rospy.Time.now() - start_time > rospy.Duration(Timeidx):
-        msg2send = "Time! {0:.0f}".format(Timeidx)
+        msg2send = "T{0:.0f} /".format(Timeidx)
+        msg2send += self._readpx4.state.mode + "/"
+        msg2send += str(self._readpx4.state.armed) + "/"
+        # msg2send += "vNED {0:>4.1f} {1:>4.1f} {2:>4.1f} ".format(self.local_velocity.twist.linear.x,
+        #                                                     self.local_velocity.twist.linear.y,
+        #                                                     self.local_velocity.twist.linear.z)
+        msg2send += "pNED {0:>4.1f} {1:>4.1f} {2:>4.1f} ".format(self._readpx4.local_position.pose.position.x,
+                                                            self._readpx4.local_position.pose.position.y,
+                                                            self._readpx4.local_position.pose.position.z)
         self.PRINT(msg2send)
+      
         Timeidx += 1.0
       #
       # Read from serial port

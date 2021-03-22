@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_state = nh.subscribe<mavros_msgs::State>
             ("mavros/state", 10, callback_state);
     ros::Subscriber sub_setpoint_local_pos = nh.subscribe<geometry_msgs::PoseStamped>
-            ("mavros/setpoint_position/local", 10, callback_setpoint_local_pos);
+            ("mavros/setpoint_posOition/local", 10, callback_setpoint_local_pos);
     ros::Subscriber sub_local_pos = nh.subscribe<geometry_msgs::PoseStamped>
             ("mavros/local_position/pose", 10, callback_local_pos);
 
