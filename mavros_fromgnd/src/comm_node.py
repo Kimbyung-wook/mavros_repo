@@ -60,14 +60,15 @@ class CommunicatorModel:
 
 
   def setup(self):
-    self._readpx4.setup();
+    self._readpx4.setup()
     service_timeout = 1
     self.PRINT("waiting for ROS services")
-    # try:
-    #   rospy.wait_for_service('control_node/control_cmd', service_timeout)
-    #   self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
-    # except rospy.ROSException:
-    #   self.PRINT_ERROR("failed to connect to control_node services")
+    # Control Node
+    try:
+      rospy.wait_for_service('control_node/control_cmd', service_timeout)
+      self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
+    except rospy.ROSException:
+      self.PRINT_ERROR("failed to connect to control_node services")
     # Cam Node
     try:
       rospy.wait_for_service('cam_node/cam_power', service_timeout)
@@ -76,12 +77,6 @@ class CommunicatorModel:
       self.PRINT("cam_node services are up")
     except rospy.ROSException:
       self.PRINT_ERROR("failed to connect to cam_node services")
-    # Control Node
-    try:
-      rospy.wait_for_service('control_node/control_cmd', service_timeout)
-      self.PRINT("control_node services are up")
-    except rospy.ROSException:
-      self.PRINT_ERROR("failed to connect to control_node services")
 
     if self._port_name[:4] != "fake":
       try:
@@ -131,7 +126,7 @@ class CommunicatorModel:
       if len(received) is not 0:
         rospy.loginfo("remaining {0}, received {1}".format(bytes_remaining,received))
         self.message_parser(received)
-#        self._control_cmd_call(self._control_cmd)
+        self._control_cmd_call(self._control_cmd)
 
       
       # Read from mavros_node
@@ -210,7 +205,7 @@ if __name__ == "__main__":
   port_name = "/dev/ttyUSB0"
   serial_timeout = 1.0
 
-  rospy.sleep(10)
+  # rospy.sleep(10)
   print("Wait for messages")
 
   #################################################

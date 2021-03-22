@@ -1,0 +1,45 @@
+<launch>
+  <!-- 
+       Using simulation time means nodes initialized after this
+       will not use the system clock for its ROS clock and 
+       instead wait for simulation ticks. 
+
+       See http://wiki.ros.org/Clock
+
+       Note: set to false for deploying to a real robot.
+  -->
+
+  <arg name="fcu_url" default="udp://:14540@127.0.0.1:14580" />
+  <arg name="gcs_url" default="" />
+  <arg name="tgt_system" default="1" />
+  <arg name="tgt_component" default="1" />
+  <arg name="log_output" default="screen" />
+  <arg name="fcu_protocol" default="v2.0" />
+  <arg name="gui" default="false"/>
+  <arg name="respawn_mavros" default="false" />
+  <arg name="vehicle" default="iris"/>
+
+  <!-- MAVROS node -->
+  <include file="$(find mavros)/launch/node.launch">
+    <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+    <arg name="config_yaml" value="$(find mavros)/launch/px4_config.yaml" />
+
+    <arg name="fcu_url" value="$(arg fcu_url)" />
+    <arg name="gcs_url" value="$(arg gcs_url)" />
+    <arg name="tgt_system" value="$(arg tgt_system)" />
+    <arg name="tgt_component" value="$(arg tgt_component)" />
+    <arg name="log_output" value="$(arg log_output)" />
+    <arg name="fcu_protocol" value="$(arg fcu_protocol)" />
+    <arg name="respawn_mavros" default="$(arg respawn_mavros)" />
+  </include>
+
+  <!-- cam node -->
+  <node pkg="mavros_fromgnd" type="cam_node.py" name="cam_node" output="screen"/>
+
+  <!-- control_node -->
+  <node pkg="mavros_fromgnd" type="control_node.py" name="control_node" output="screen"/>
+
+  <!-- comm_node -->
+  <node pkg="mavros_fromgnd" type="comm_node.py" name="comm_node" output="screen"/>
+
+</launch>
