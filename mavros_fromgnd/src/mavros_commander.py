@@ -44,43 +44,59 @@ class MavrosCommander(MavrosCommons):
   #
   def set_param(self, parameter, value, timeout):
     """set Parameters: , timeout(int): seconds"""
-    rospy.loginfo("setting FCU parameter: {0} - {1}".format(parameter, value))
-    loop_freq = 1  # Hz
-    rate = rospy.Rate(loop_freq)
+    param_get = False
     param_set = False
-    try:
-      res = self.get_param_srv(parameter)
-      if res.success:
-        rospy.loginfo(
-          "MAV_TYPE received | type: {0} | seconds: {1} of {2}".
-          format(mavutil.mavlink.enums['MAV_TYPE'][self.mav_type]
-                .name, i / loop_freq, timeout))
-    except rospy.ServiceException as e:
-      rospy.logerr(e)
-    loaded_param_name
+    prev_param = 0
+    now_param = 0
+    # Get prev_param
+    # rospy.loginfo("get FCU parameter: {0} to {1}".format(parameter, value))
+    loop_freq = 2  # Hz
+    rate = rospy.Rate(loop_freq)
     for i in xrange(timeout * loop_freq):
-
-      if self.state.armed == arm:
-        param_set = True
-        rospy.loginfo("set arm success | seconds: {0} of {1}".format(
-          i / loop_freq, timeout))
-        break
-      else:
+      # Get parameter
+      if False == param_get:
         try:
-          res = self.set_param_srv(parameter,value)
-          if not res.success:
-            rospy.logerr("failed to send arm command")
+          res = self.get_param_srv(parameter)
+          if res.success == True:
+            if res.value.integer != 0:
+              prev_param = res.value.integer
+            else:
+              prev_param = res.value.real
+            param_get = True
         except rospy.ServiceException as e:
           rospy.logerr(e)
-
+      # Set pararmeter
+      if (True == param_get) & (False == param_set):
+        try:
+          req = ParamValue(0,0.)
+          if type(value) == int:
+            req = ParamValue(value,0.0)
+          else:
+            req = ParamValue(0,value)
+          res = self.set_param_srv(parameter,req)
+          if res.success == True:
+            if res.value.integer != 0:
+              now_param = res.value.integer
+            else:
+              now_param = res.value.real
+            rospy.loginfo(
+              "Param changed | {0} : {1:.4} -> {2:.4} | seconds: {3} of {4}".
+              format(parameter, prev_param, now_param, i / loop_freq, timeout))
+            param_set = True
+        except rospy.ServiceException as e:
+          rospy.logerr(e)
+      # All Done?
+      if (param_set == True) & (param_get == True):
+        break
+      # sleep
       try:
         rate.sleep()
       except rospy.ROSException as e:
         rospy.logfatal(e)
-
-    if True==param_set:
-      rospy.logerr("failed to set parameter | param {0} - {1} | timeout(seconds): {2}".
-        format(arm, old_arm, timeout))
+    # Didn't you do that?
+    if (param_set == False) | (param_get == False):
+      rospy.logerr("failed to set parameter | param {0} | timeout(seconds): {1}".
+        format(parameter, timeout))
 
   def send_pos(self):
       rate = rospy.Rate(10)  # Hz
@@ -204,40 +220,7 @@ class MavrosCommander(MavrosCommons):
       return False
     else:
       return True
-
-  def set_XY_VEL_MAX(self,speed=2.0):
-    self.set_param_srv
-    res0 = self.get_param_srv("MPC_XY_VEL_MAX")
-    req = ParamValue(0,speed)
-    res1 = self.set_param_srv("MPC_XY_VEL_MAX",req)
-    res2 = self.get_param_srv("MPC_XY_VEL_MAX")
-    print("MPC_XY_VEL_MAX Request "+str(req.real)+"/ Prev "+ str(res0.value.real)+"-> Now "+str(res2.value.real))
-
-  def set_TKO_SPEED(self,speed=0.6):
-    self.set_param_srv
-    res0 = self.get_param_srv("MPC_TKO_SPEED")
-    req = ParamValue(0,speed)
-    res1 = self.set_param_srv("MPC_TKO_SPEED",req)
-    res2 = self.get_param_srv("MPC_TKO_SPEED")
-    print("MPC_XY_VEL_MAX Request "+str(req.real)+"/ Prev "+ str(res0.value.real)+"-> Now "+str(res2.value.real))
-
-  def set_MC_YAWRATE_MAX(self,yaw_rate_dps=200.0):
-    self.set_param_srv
-    res0 = self.get_param_srv("MC_YAWRATE_MAX")
-    req = ParamValue(0,yaw_rate_dps)
-    res1 = self.set_param_srv("MC_YAWRATE_MAX",req)
-    res2 = self.get_param_srv("MC_YAWRATE_MAX")
-    print("MC_YAWRATE_MAX Request "+str(req.real)+"/ Prev "+ str(res0.value.real)+"-> Now "+str(res2.value.real))
-
-  def set_MPC_YAWRAUTO_MAX(self,yaw_rate_dps=45.0):
-    self.set_param_srv
-    res0 = self.get_param_srv("MPC_YAWRAUTO_MAX")
-    req = ParamValue(0,yaw_rate_dps)
-    res1 = self.set_param_srv("MPC_YAWRAUTO_MAX",req)
-    res2 = self.get_param_srv("MPC_YAWRAUTO_MAX")
-    print("MPC_YAWRAUTO_MAX Request "+str(req.real)+"/ Prev "+ str(res0.value.real)+"-> Now "+str(res2.value.real))
-
-
+      
 if __name__=="__main__":
   rospy.init_node("test_for_mavros_commander")
   print("mavros_commander")
@@ -251,37 +234,29 @@ if __name__=="__main__":
                               5, -1)
 
   mavros_commander.set_mode("OFFBOARD", 5)
-  # mavros_commander.set_arm(True, 5)
-  mavros_commander.set_XY_VEL_MAX(5.0)
-  mavros_commander.set_TKO_SPEED(0.1)
-  mavros_commander.set_MPC_YAWRAUTO_MAX(30.0)
+  mavros_commander.set_param("MPC_XY_VEL_MAX", 3.0,2)
+  mavros_commander.set_param("MPC_XY_CRUISE", 3.0,2)
+  mavros_commander.set_param("MPC_TKO_SPEED", 0.05,2)
+  mavros_commander.set_param("MPC_YAWRAUTO_MAX", 30.0,2)
+  mavros_commander.set_arm(True, 2)
+  # positions = ((0, 0, 0), (50, 50, 20), (50, -50, 20), (-50, -50, 20),
+  #               (0, 0, 20))
+  # positions = ((50, 50, 20), (50, -50, 20), (-50, -50, 20),
+  #               (0, 0, 20))
+  positions = ((0, 0, 3, 0),(10, 10, 5, 30), (10, -10, 5, 60), (-10, -10, 5, 30),
+                (0, 0, 5, 0))
+  # mavros_commander
+  for i in xrange(len(positions)):
+    if mavros_commander.get_arm(True):
+      mavros_commander.set_arm(True,5)
+    mavros_commander.reach_position_yaw(
+                positions[i][0],
+                positions[i][1],
+                positions[i][2],
+                positions[i][3],
+                30)
 
-  # res = mavros_commander.get_param_srv("MPC_XY_VEL_MAX")
-  # print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
-  # res = mavros_commander.get_param_srv("MPC_XY_CRUISE")
-  # print("Parameter MPC_XY_CRUISE resp " + str(res.success) + " value " + str(res.value.real))
-  # res = mavros_commander.get_param_srv("MPC_TKO_SPEED")
-  # print("Parameter MPC_TKO_SPEED resp " + str(res.success) + " value " + str(res.value.real))
-  # res = mavros_commander.get_param_srv("MPC_VEL_MANUAL")
-  # print("Parameter MPC_VEL_MANUAL resp " + str(res.success) + " value " + str(res.value.real))
-  # # positions = ((0, 0, 0), (50, 50, 20), (50, -50, 20), (-50, -50, 20),
-  # #               (0, 0, 20))
-  # # positions = ((50, 50, 20), (50, -50, 20), (-50, -50, 20),
-  # #               (0, 0, 20))
-  # positions = ((0, 0, 3, 0),(10, 10, 5, 30), (10, -10, 5, 60), (-10, -10, 5, 30),
-  #               (0, 0, 5, 0))
-  # # mavros_commander
-  # for i in xrange(len(positions)):
-  #   if mavros_commander.get_arm(True):
-  #     mavros_commander.set_arm(True,5)
-  #   mavros_commander.reach_position_yaw(
-  #               positions[i][0],
-  #               positions[i][1],
-  #               positions[i][2],
-  #               positions[i][3],
-  #               30)
-
-  # mavros_commander.set_mode("AUTO.LAND", 5)
-  # mavros_commander.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
-  #                             45, 0)
-  # mavros_commander.set_arm(False, 5)
+  mavros_commander.set_mode("AUTO.LAND", 5)
+  mavros_commander.wait_for_landed_state(mavutil.mavlink.MAV_LANDED_STATE_ON_GROUND,
+                              45, 0)
+  mavros_commander.set_arm(False, 5)

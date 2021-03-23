@@ -194,10 +194,16 @@ class MavrosCommons(object):
     return self.state.mode
 
   def get_local_position(self):
+    quat = [self.local_position.pose.orientation.x,
+            self.local_position.pose.orientation.y,
+            self.local_position.pose.orientation.z,
+            self.local_position.pose.orientation.w]
+    (roll, pitch , yaw) = euler_from_quaternion(quat)
+
     return [self.local_position.pose.position.x,
             self.local_position.pose.position.y,
             self.local_position.pose.position.z,
-            self.local_position.pose.orientation.z]
+            yaw]
   def get_yaw(self):
     return self.local_position.pose.orientation.z
   def set_arm(self, arm, timeout):

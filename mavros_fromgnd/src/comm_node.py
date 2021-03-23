@@ -15,6 +15,7 @@ from mavros_fromgnd.msg import camstatus
 from mavros_commons import MavrosCommons
 from std_msgs.msg import *
 from flightaction import ControlState
+from six.moves import xrange
 
 class FakeSerialModel_Server:
   def __init__(self):
@@ -46,7 +47,7 @@ class CommunicatorModel:
                     baudrate=57600,
                     serial_timeout=1.0):
     rospy.init_node(node_name)
-    self._readpx4 = MavrosCommons();
+    self._readpx4 = MavrosCommons()
     self._rate = rospy.Rate(hz)
     self._port_name = port_name
     self._baudrate = baudrate
@@ -63,21 +64,40 @@ class CommunicatorModel:
     self._readpx4.setup()
     service_timeout = 1
     self.PRINT("waiting for ROS services")
-    # Control Node
-    try:
-      rospy.wait_for_service('control_node/control_cmd', service_timeout)
-      self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
-    except rospy.ROSException:
-      self.PRINT_ERROR("failed to connect to control_node services")
-    # Cam Node
-    try:
-      rospy.wait_for_service('cam_node/cam_power', service_timeout)
-      self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
-      self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
-      self.PRINT("cam_node services are up")
-    except rospy.ROSException:
-      self.PRINT_ERROR("failed to connect to cam_node services")
+    
+    # Scan nodes booted
+    timeout = 5
+    loop_freq = 1  # Hz
+    rate = rospy.Rate(loop_freq)
+    reached_control = False
+    reached_cam = False
+    for i in xrange(timeout * loop_freq):
+      # Control Node
+      if reached_control == False :
+        try:
+          rospy.wait_for_service('control_node/control_cmd', service_timeout)
+          self._control_cmd_call = rospy.ServiceProxy("control_node/control_cmd",ctrl_srv)
+          reached_control = True
+        except rospy.ROSException:
+          self.PRINT_ERROR("failed to connect to control_node services")
+      
+      # Cam Node
+      if reached_cam == False :
+        try:
+          rospy.wait_for_service('cam_node/cam_power', service_timeout)
+          self._cam_power_call = rospy.ServiceProxy("cam_node/cam_power",campower_srv)
+          self._cam_state_sub = rospy.Subscriber("cam_node/cam_state",camstatus,self.cam_state_cb)
+          self.PRINT("cam_node services are up")
+          reached_cam = True
+        except rospy.ROSException:
+          self.PRINT_ERROR("failed to connect to cam_node services")
+      # done?
+      if reached_cam & reached_control:
+        break
+      # Wait loop
+      rate.sleep()
 
+    # Cannot Open Serial Port
     if self._port_name[:4] != "fake":
       try:
         self._port = serial.Serial(self._port_name,self._baudrate,timeout=self._serial_timeout)

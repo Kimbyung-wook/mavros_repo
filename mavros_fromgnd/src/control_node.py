@@ -257,6 +257,21 @@ class ControlNode():
       return True
     else:
       return False
+      
+  def go_STOP(self):
+    self.position_cmd = self.mavros_controller.get_local_position()
+    self.position_cmd = [0.0, 0.0, 5.0, 0.0]
+    rospy.loginfo("go HOME")
+    if self.mavros_controller.reach_position_yaw(self.position_cmd[0],
+                                                self.position_cmd[1],
+                                                self.position_cmd[2],
+                                                self.position_cmd[3], 10):
+      self.control_state = "STANDBY"
+      self.position = self.position_cmd
+      rospy.loginfo("STANDBY")
+      return True
+    else:
+      return False
 
     
 if __name__ == "__main__":
